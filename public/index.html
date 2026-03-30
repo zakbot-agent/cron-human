@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cron-human</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f14;
+      --bg2: #1a1a24;
+      --bg3: #24243a;
+      --border: #2a2a40;
+      --text: #e4e4ef;
+      --text2: #9999b0;
+      --accent: #6c63ff;
+      --accent2: #8b7fff;
+      --green: #4ade80;
+      --red: #f87171;
+      --cyan: #22d3ee;
+      --yellow: #facc15;
+      --magenta: #c084fc;
+      --blue: #60a5fa;
+      --orange: #fb923c;
+      --radius: 12px;
+      --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    header h1 span { color: var(--accent); }
+
+    header p {
+      color: var(--text2);
+      margin-top: 0.25rem;
+      font-size: 0.95rem;
+    }
+
+    /* Mode Toggle */
+    .mode-toggle {
+      display: flex;
+      background: var(--bg2);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 0.75rem;
+      text-align: center;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text2);
+      border: none;
+      background: transparent;
+      transition: all 0.2s;
+    }
+
+    .mode-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* Language Toggle */
+    .lang-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .lang-btn {
+      padding: 0.35rem 0.9rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text2);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .lang-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(108, 99, 255, 0.1);
+    }
+
+    /* Input Area */
+    .input-area {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    .input-area input {
+      width: 100%;
+      padding: 1rem 1.25rem;
+      font-size: 1.15rem;
+      font-family: var(--mono);
+      background: var(--bg2);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-area input:focus {
+      border-color: var(--accent);
+    }
+
+    .input-area input::placeholder {
+      color: var(--text2);
+      opacity: 0.5;
+    }
+
+    /* Result Card */
+    .result-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      min-height: 60px;
+    }
+
+    .result-card .label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text2);
+      margin-bottom: 0.5rem;
+    }
+
+    .result-card .value {
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--green);
+      font-family: var(--mono);
+      word-break: break-word;
+    }
+
+    .result-card .value.error {
+      color: var(--red);
+      font-size: 0.95rem;
+      font-weight: 400;
+    }
+
+    .copy-btn {
+      float: right;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 0.3rem 0.7rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .copy-btn.copied { background: var(--green); color: #000; border-color: var(--green); }
+
+    /* Field Breakdown */
+    .fields {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .field-box {
+      text-align: center;
+      border-radius: 10px;
+      padding: 0.75rem 0.25rem;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+    }
+
+    .field-box .field-val {
+      font-family: var(--mono);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+    }
+
+    .field-box .field-name {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.6;
+    }
+
+    .field-box:nth-child(1) { border-color: var(--cyan); }
+    .field-box:nth-child(1) .field-val { color: var(--cyan); }
+    .field-box:nth-child(2) { border-color: var(--blue); }
+    .field-box:nth-child(2) .field-val { color: var(--blue); }
+    .field-box:nth-child(3) { border-color: var(--magenta); }
+    .field-box:nth-child(3) .field-val { color: var(--magenta); }
+    .field-box:nth-child(4) { border-color: var(--green); }
+    .field-box:nth-child(4) .field-val { color: var(--green); }
+    .field-box:nth-child(5) { border-color: var(--yellow); }
+    .field-box:nth-child(5) .field-val { color: var(--yellow); }
+
+    /* Timeline */
+    .timeline {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .timeline .label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text2);
+      margin-bottom: 0.75rem;
+    }
+
+    .timeline-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.4rem 0;
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      color: var(--text2);
+    }
+
+    .timeline-item:first-child {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .timeline-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .timeline-item:first-child .timeline-dot {
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+    }
+
+    /* Presets */
+    .presets {
+      margin-bottom: 1.5rem;
+    }
+
+    .presets .label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text2);
+      margin-bottom: 0.5rem;
+    }
+
+    .preset-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .preset-btn {
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text2);
+      font-size: 0.82rem;
+      font-family: var(--mono);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(108, 99, 255, 0.08);
+    }
+
+    footer {
+      text-align: center;
+      color: var(--text2);
+      font-size: 0.8rem;
+      margin-top: 2rem;
+      opacity: 0.5;
+    }
+
+    @media (max-width: 540px) {
+      .container { padding: 1.25rem 1rem; }
+      header h1 { font-size: 1.5rem; }
+      .result-card .value { font-size: 1.1rem; }
+      .fields { gap: 0.3rem; }
+      .field-box { padding: 0.5rem 0.15rem; }
+      .field-box .field-val { font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>cron<span>-human</span></h1>
+      <p>Cron expression translator &mdash; EN / FR</p>
+    </header>
+
+    <div class="mode-toggle">
+      <button class="mode-btn active" data-mode="cron2human">Cron &rarr; Human</button>
+      <button class="mode-btn" data-mode="human2cron">Human &rarr; Cron</button>
+    </div>
+
+    <div class="lang-row">
+      <button class="lang-btn active" data-lang="en">EN</button>
+      <button class="lang-btn" data-lang="fr">FR</button>
+    </div>
+
+    <div class="input-area">
+      <input type="text" id="mainInput" placeholder="0 8 * * 1" autocomplete="off" spellcheck="false">
+    </div>
+
+    <div class="result-card" id="resultCard">
+      <button class="copy-btn" id="copyBtn" style="display:none">Copy</button>
+      <div class="label">Result</div>
+      <div class="value" id="resultValue">&mdash;</div>
+    </div>
+
+    <div class="fields" id="fieldBreakdown" style="display:none">
+      <div class="field-box"><div class="field-val" id="fMinute">*</div><div class="field-name">Minute</div></div>
+      <div class="field-box"><div class="field-val" id="fHour">*</div><div class="field-name">Hour</div></div>
+      <div class="field-box"><div class="field-val" id="fDay">*</div><div class="field-name">Day</div></div>
+      <div class="field-box"><div class="field-val" id="fMonth">*</div><div class="field-name">Month</div></div>
+      <div class="field-box"><div class="field-val" id="fWeekday">*</div><div class="field-name">Weekday</div></div>
+    </div>
+
+    <div class="timeline" id="timeline" style="display:none">
+      <div class="label">Next executions</div>
+      <div id="timelineItems"></div>
+    </div>
+
+    <div class="presets">
+      <div class="label">Presets</div>
+      <div class="preset-grid" id="presetGrid"></div>
+    </div>
+
+    <footer>cron-human &mdash; zero dependencies</footer>
+  </div>
+
+  <script>
+    (function() {
+      let mode = 'cron2human';
+      let lang = 'en';
+      let debounceTimer = null;
+
+      const PRESETS_CRON = [
+        { label: '* * * * *', value: '* * * * *' },
+        { label: '*/5 * * * *', value: '*/5 * * * *' },
+        { label: '*/15 * * * *', value: '*/15 * * * *' },
+        { label: '0 * * * *', value: '0 * * * *' },
+        { label: '0 0 * * *', value: '0 0 * * *' },
+        { label: '0 8 * * 1-5', value: '0 8 * * 1-5' },
+        { label: '0 8 * * 1', value: '0 8 * * 1' },
+        { label: '0 0 1 * *', value: '0 0 1 * *' },
+        { label: '0 12 * * *', value: '0 12 * * *' },
+        { label: '30 2 * * 0', value: '30 2 * * 0' },
+      ];
+
+      const PRESETS_HUMAN = {
+        en: [
+          'every minute', 'every 5 minutes', 'every hour', 'every day at 8am',
+          'every monday at 9am', 'at midnight', 'at noon', 'weekly', 'monthly',
+        ],
+        fr: [
+          'chaque minute', 'toutes les 5 minutes', 'chaque heure', 'tous les jours a 8h',
+          'tous les lundis a 9h', 'a minuit', 'a midi', 'hebdomadaire', 'mensuel',
+        ],
+      };
+
+      const $ = (sel) => document.querySelector(sel);
+      const input = $('#mainInput');
+      const resultValue = $('#resultValue');
+      const copyBtn = $('#copyBtn');
+      const fieldBreakdown = $('#fieldBreakdown');
+      const timeline = $('#timeline');
+      const timelineItems = $('#timelineItems');
+      const presetGrid = $('#presetGrid');
+
+      function renderPresets() {
+        presetGrid.innerHTML = '';
+        const list = mode === 'cron2human' ? PRESETS_CRON : PRESETS_HUMAN[lang] || PRESETS_HUMAN.en;
+        const items = mode === 'cron2human' ? list : list.map(v => ({ label: v, value: v }));
+
+        (mode === 'cron2human' ? list : list.map(v => ({ label: v, value: v }))).forEach(p => {
+          const btn = document.createElement('button');
+          btn.className = 'preset-btn';
+          btn.textContent = typeof p === 'string' ? p : p.label;
+          btn.addEventListener('click', () => {
+            input.value = typeof p === 'string' ? p : p.value;
+            doConvert();
+          });
+          presetGrid.appendChild(btn);
+        });
+      }
+
+      function formatDate(iso) {
+        const d = new Date(iso);
+        const days = lang === 'fr'
+          ? ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam']
+          : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        const months = lang === 'fr'
+          ? ['Jan','Fev','Mar','Avr','Mai','Jun','Jul','Aou','Sep','Oct','Nov','Dec']
+          : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const dn = days[d.getDay()];
+        const mn = months[d.getMonth()];
+        const dd = d.getDate();
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        return `${dn} ${dd} ${mn} ${d.getFullYear()} ${hh}:${mm}`;
+      }
+
+      function showResult(text, isError) {
+        resultValue.textContent = text;
+        resultValue.className = 'value' + (isError ? ' error' : '');
+        copyBtn.style.display = isError ? 'none' : 'inline-block';
+      }
+
+      function showFields(fields) {
+        if (!fields) { fieldBreakdown.style.display = 'none'; return; }
+        fieldBreakdown.style.display = 'grid';
+        $('#fMinute').textContent = fields.minute.raw;
+        $('#fHour').textContent = fields.hour.raw;
+        $('#fDay').textContent = fields.day.raw;
+        $('#fMonth').textContent = fields.month.raw;
+        $('#fWeekday').textContent = fields.weekday.raw;
+      }
+
+      function showTimeline(executions) {
+        if (!executions || executions.length === 0) { timeline.style.display = 'none'; return; }
+        timeline.style.display = 'block';
+        timelineItems.innerHTML = '';
+        executions.forEach(iso => {
+          const div = document.createElement('div');
+          div.className = 'timeline-item';
+          div.innerHTML = '<div class="timeline-dot"></div><span>' + formatDate(iso) + '</span>';
+          timelineItems.appendChild(div);
+        });
+      }
+
+      async function doConvert() {
+        const val = input.value.trim();
+        if (!val) {
+          showResult('\u2014', false);
+          showFields(null);
+          showTimeline(null);
+          return;
+        }
+
+        try {
+          let url;
+          if (mode === 'cron2human') {
+            url = '/api/parse?expr=' + encodeURIComponent(val) + '&lang=' + lang + '&next=5';
+          } else {
+            url = '/api/reverse?text=' + encodeURIComponent(val) + '&lang=' + lang;
+          }
+          const res = await fetch(url);
+          const data = await res.json();
+
+          if (!data.success) {
+            showResult(data.error, true);
+            showFields(null);
+            showTimeline(null);
+            return;
+          }
+
+          if (mode === 'cron2human') {
+            showResult(data.human, false);
+          } else {
+            showResult(data.cron, false);
+          }
+          showFields(data.fields);
+          showTimeline(data.nextExecutions);
+        } catch (err) {
+          showResult('Connection error', true);
+          showFields(null);
+          showTimeline(null);
+        }
+      }
+
+      // Event listeners
+      input.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(doConvert, 200);
+      });
+
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          mode = btn.dataset.mode;
+          input.value = '';
+          input.placeholder = mode === 'cron2human' ? '0 8 * * 1' : (lang === 'fr' ? 'tous les lundis a 8h' : 'every monday at 8am');
+          showResult('\u2014', false);
+          showFields(null);
+          showTimeline(null);
+          renderPresets();
+        });
+      });
+
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          lang = btn.dataset.lang;
+          renderPresets();
+          if (input.value.trim()) doConvert();
+          if (mode === 'human2cron') {
+            input.placeholder = lang === 'fr' ? 'tous les lundis a 8h' : 'every monday at 8am';
+          }
+        });
+      });
+
+      copyBtn.addEventListener('click', () => {
+        const text = resultValue.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          copyBtn.textContent = 'Copied!';
+          copyBtn.classList.add('copied');
+          setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('copied'); }, 1500);
+        });
+      });
+
+      renderPresets();
+    })();
+  </script>
+</body>
+</html>

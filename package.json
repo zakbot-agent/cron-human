@@ -1,0 +1,26 @@
+{
+  "name": "cron-human",
+  "version": "1.0.0",
+  "description": "Convert cron expressions to human-readable text (FR/EN) and vice-versa",
+  "main": "dist/index.js",
+  "bin": {
+    "cron-human": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "cron",
+    "human-readable",
+    "french",
+    "english",
+    "cli"
+  ],
+  "author": "Zakaria Kone",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^6.0.2"
+  }
+}
